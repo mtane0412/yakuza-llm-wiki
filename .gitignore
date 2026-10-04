@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Obsidian（共有したい設定のみ追跡する）
+.obsidian/workspace*.json
+.obsidian/cache
+.obsidian/plugins/*/data.json
+.trash/
+
+# 著作権上、公開リポジトリに含められない原本は raw/private/ に置く
+raw/private/
