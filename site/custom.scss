@@ -6,6 +6,9 @@
 //   - disputed（異論・未確定）: 橙・疑問アイコン
 //   - bias（ソースの立場による偏り）: 紫・引用アイコン
 //   - question（要出典）は Quartz 標準の question スタイル（黄）をそのまま使う
+// - stacked-pages プラグインのタブのラベルを、日本語の縦書き（上から下へ、漢字・かなは正立）で表示する
+//   - プラグインは英字を下から上へ読ませるため writing-mode: vertical-lr のラベルを 180 度回転させるが、
+//     これでは正立表示される漢字・かなが上下逆さまになる。回転を打ち消して通常の縦書きに戻す
 // - アイコンは quartz/styles/callouts.scss が定義する CSS 変数を再利用する
 @use "./base.scss";
 
@@ -30,4 +33,10 @@
     --bg: #7a43b510;
     --callout-icon: var(--callout-icon-quote);
   }
+}
+
+// stacked-pages のタブのラベル・閉じるボタンの 180 度回転を打ち消す（日本語のページ名が逆さまになるため）
+.binder-tab .binder-label,
+.binder-tab .binder-close {
+  transform: none;
 }
