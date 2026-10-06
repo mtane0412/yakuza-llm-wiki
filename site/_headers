@@ -1,0 +1,4 @@
+# Cloudflare Workers Static Assets のレスポンスヘッダー設定（site/build.sh がビルド後に成果物へコピーする）
+# 検索エンジンに載せない方針（noindex）のため、HTML の robots メタタグに加えて、全レスポンスに X-Robots-Tag を付ける
+/*
+  X-Robots-Tag: noindex, nofollow

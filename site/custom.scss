@@ -1,0 +1,33 @@
+// Quartz のカスタムスタイル（ビルド時に quartz/styles/custom.scss へコピーされる）
+//
+// 仕様:
+// - CLAUDE.md 2.4 で定めた確度・矛盾のコールアウトに、種別ごとの色とアイコンを割り当てる
+//   - contradiction（ソース間の矛盾）: 赤・警告アイコン
+//   - disputed（異論・未確定）: 橙・疑問アイコン
+//   - bias（ソースの立場による偏り）: 紫・引用アイコン
+//   - question（要出典）は Quartz 標準の question スタイル（黄）をそのまま使う
+// - アイコンは quartz/styles/callouts.scss が定義する CSS 変数を再利用する
+@use "./base.scss";
+
+.callout {
+  &[data-callout="contradiction"] {
+    --color: #db4242;
+    --border: #db424244;
+    --bg: #db424210;
+    --callout-icon: var(--callout-icon-warning);
+  }
+
+  &[data-callout="disputed"] {
+    --color: #db8942;
+    --border: #db894244;
+    --bg: #db894210;
+    --callout-icon: var(--callout-icon-question);
+  }
+
+  &[data-callout="bias"] {
+    --color: #7a43b5;
+    --border: #7a43b544;
+    --bg: #7a43b510;
+    --callout-icon: var(--callout-icon-quote);
+  }
+}
