@@ -12,6 +12,7 @@
 //   7. グラフビューのスクリプトが URL のパスを slug として使っていないこと
 //      （日本語のページ名がパーセントエンコードのまま索引と照合され、グラフが空になる不具合への応急処置を確認する。
 //        応急処置は site/build.sh の patch_graph_slug を参照）
+//   8. Cloudflare Workers Static Assets 用の _headers が、全パス（/*）に X-Robots-Tag: noindex, nofollow を付けること
 // - 1 件でも違反があれば違反内容を列挙して終了コード 1 で終了する
 
 import fs from "node:fs"
@@ -116,6 +117,13 @@ function main() {
     .filter((file) => RAW_PATHNAME_SLUG.test(fs.readFileSync(path.join(publicDir, file), "utf8")))
   if (unpatchedScripts.length > 0) {
     errors.push(`URL のパスを slug として使うスクリプトが残っています（グラフビューが空になる）: ${unpatchedScripts.join(", ")}`)
+  }
+
+  // 8. _headers による X-Robots-Tag
+  const headersPath = path.join(publicDir, "_headers")
+  const headers = fs.existsSync(headersPath) ? fs.readFileSync(headersPath, "utf8") : ""
+  if (!/^\/\*\n(?:[ \t]+.*\n)*?[ \t]+X-Robots-Tag: noindex, nofollow$/m.test(headers)) {
+    errors.push("_headers に /* 向けの X-Robots-Tag: noindex, nofollow がありません")
   }
 
   if (errors.length > 0) {

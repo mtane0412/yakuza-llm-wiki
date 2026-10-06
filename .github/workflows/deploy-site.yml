@@ -1,48 +1,54 @@
-# wiki/ を Quartz でビルドし、GitHub Pages にデプロイするワークフロー
+# wiki/ を Quartz でビルドし、Cloudflare Workers Static Assets にデプロイするワークフロー
 #
 # 仕様:
-# - PoC 段階のため、手動実行（workflow_dispatch）のときだけ動かす。公開方針が固まったら push トリガーを追加する
-# - ビルドと検証は site/build.sh に任せる（noindex の robots メタタグ挿入と site/verify.mjs による検証を含む）
-# - 初回は リポジトリの Settings > Pages > Source を「GitHub Actions」にする必要がある
-# - 注意: Quartz v5.0.0 の explorer / graph / search プラグインは /static/contentIndex.json を絶対パスで取得するため、
-#   プロジェクトサイトのサブパス（/yakuza-llm-wiki/）で配信するとこの 3 機能が動かない。
-#   ドメイン直下で配信する（独自ドメイン、Cloudflare Pages など）か、別途対処が必要である
-name: Deploy wiki site to GitHub Pages
+# - main への push（wiki/・site/・本ファイルの変更時）と手動実行（workflow_dispatch）で動く
+# - ビルドと検証は site/build.sh に任せる（noindex の robots メタタグ・_headers の配置と site/verify.mjs による検証を含む）
+# - Quartz 本体とプラグイン（site/.quartz/）をキャッシュし、2 回目以降のビルド時間を短縮する。
+#   キャッシュキーは site/build.sh のハッシュなので、QUARTZ_VERSION や応急処置を変えるとキャッシュも作り直される
+# - デプロイには wrangler を使い、設定は site/wrangler.jsonc に置く
+#
+# 必要な GitHub Secrets:
+# - CLOUDFLARE_API_TOKEN: Cloudflare の API トークン（テンプレート「Edit Cloudflare Workers」で作成）
+# - CLOUDFLARE_ACCOUNT_ID: Cloudflare のアカウント ID
+name: Deploy wiki site to Cloudflare
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "wiki/**"
+      - "site/**"
+      - ".github/workflows/deploy-site.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: deploy-site
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Cache Quartz and plugins
+        uses: actions/cache@v4
+        with:
+          path: |
+            site/.quartz
+            !site/.quartz/public
+            !site/.quartz/content
+          key: quartz-${{ runner.os }}-${{ hashFiles('site/build.sh') }}
       - name: Build and verify site
         run: site/build.sh
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site/.quartz/public
-
-  deploy:
-    needs: build
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy to Cloudflare
+        run: npx --yes wrangler@4.147.0 deploy --config site/wrangler.jsonc
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

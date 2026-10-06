@@ -1,0 +1,22 @@
+// Cloudflare Workers Static Assets の設定（Worker コードを持たない assets-only Worker）
+//
+// 仕様:
+// - site/build.sh が出力した site/.quartz/public/ をそのまま配信する
+// - Quartz は拡張子なしのリンク（例: /concepts/上納金）を出力するため、html_handling で foo.html を補完する
+// - 存在しないパスには Quartz が出力する 404.html を返す
+// - 配信先は workers.dev のサブドメイン（https://yakuza-llm-wiki.<アカウントのサブドメイン>.workers.dev）
+//
+// 使い方（リポジトリのルートで実行）:
+//   npx wrangler@4.147.0 dev --config site/wrangler.jsonc      # ローカルで配信を確認
+//   npx wrangler@4.147.0 deploy --config site/wrangler.jsonc   # デプロイ（通常は GitHub Actions が行う）
+{
+  "$schema": "https://unpkg.com/wrangler@4.147.0/config-schema.json",
+  "name": "yakuza-llm-wiki",
+  "compatibility_date": "2026-10-06",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./.quartz/public",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}

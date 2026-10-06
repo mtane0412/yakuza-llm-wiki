@@ -5,7 +5,8 @@
 # - バージョンを固定した Quartz を site/.quartz/ に取得し（Git 管理外）、プラグインを lockfile どおりに復元する
 # - site/quartz.config.yaml と site/custom.scss を Quartz に配置し、wiki/ を content/ にコピーしてビルドする
 # - 公開するのは wiki/ のみで、raw/ と templates/ はコピーしない
-# - 検索エンジンに載せないため、出力したすべての HTML の <head> 直後に robots メタタグ（noindex, nofollow）を挿入する
+# - 検索エンジンに載せないため、出力したすべての HTML の <head> 直後に robots メタタグ（noindex, nofollow）を挿入し、
+#   Cloudflare Workers Static Assets 用の site/_headers（X-Robots-Tag）を成果物にコピーする
 # - 最後に site/verify.mjs で成果物を検証し、違反があれば失敗する
 #
 # 使い方:
@@ -97,6 +98,7 @@ npx quartz build
 
 # 5. robots メタタグの挿入（Quartz に robots を設定する項目がないため、出力後に挿入する）
 find public -name '*.html' -print0 | xargs -0 perl -pi -e "s|<head>|<head>$ROBOTS_META|"
+cp "$SITE_DIR/_headers" public/_headers
 
 # 6. 成果物の検証
 node "$SITE_DIR/verify.mjs" "$QUARTZ_DIR/public"
