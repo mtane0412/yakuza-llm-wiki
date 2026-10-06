@@ -2,7 +2,7 @@
 # Yakuza LLM Wiki の Quartz 設定（ビルド時に Quartz ルートの quartz.config.yaml としてコピーされる）
 #
 # Quartz v5.0.0 の quartz.config.default.yaml を元に、次の点を変更している。
-# - サイト名・ロケール（ja-JP）・baseUrl（GitHub Pages）・日本語フォント
+# - サイト名・ロケール（ja-JP）・baseUrl（Cloudflare Workers の workers.dev）・日本語フォント
 # - アクセス解析を無効化
 # - 検索エンジンに載せない方針（noindex）のため、サイトマップと RSS を出力しない
 #   （robots メタタグは site/build.sh がビルド後に挿入する）
@@ -15,7 +15,7 @@ configuration:
   enablePopovers: true
   analytics: null
   locale: ja-JP
-  baseUrl: mtane0412.github.io/yakuza-llm-wiki
+  baseUrl: yakuza-llm-wiki.mtane0412.workers.dev
   ignorePatterns:
     - private
     - templates

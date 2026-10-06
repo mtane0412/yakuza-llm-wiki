@@ -4,7 +4,7 @@
 // - site/build.sh が出力した site/.quartz/public/ をそのまま配信する
 // - Quartz は拡張子なしのリンク（例: /concepts/上納金）を出力するため、html_handling で foo.html を補完する
 // - 存在しないパスには Quartz が出力する 404.html を返す
-// - 配信先は workers.dev のサブドメイン（https://yakuza-llm-wiki.<アカウントのサブドメイン>.workers.dev）
+// - 配信先は https://yakuza-llm-wiki.mtane0412.workers.dev（site/quartz.config.yaml の baseUrl と一致させる）
 //
 // 使い方（リポジトリのルートで実行）:
 //   npx wrangler@4.147.0 dev --config site/wrangler.jsonc      # ローカルで配信を確認
