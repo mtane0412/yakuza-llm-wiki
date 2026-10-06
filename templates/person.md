@@ -5,7 +5,7 @@ aliases: []                 # 通称・異名・読み・ローマ字
 tags: []
 born: null                  # YYYY または YYYY-MM-DD
 died: null
-period: [null, null]
+period: [null, null]        # 活動期間（組長在任・議員在職など、歴史的な活動の始期と終期）。生没年は born / died に書く
 affiliations: []            # "[[組織名]]" のリスト
 roles: []                   # 例: 三代目組長, 若頭, 警察庁長官
 living: false               # 存命の場合 true（CLAUDE.md 2.5 の配慮対象）
