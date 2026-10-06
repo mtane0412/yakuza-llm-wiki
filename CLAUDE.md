@@ -70,7 +70,7 @@ type: organization          # source / person / organization / event / concept /
 title: 山口組
 aliases: [六代目山口組, Yamaguchi-gumi]
 tags: [広域団体, 指定暴力団, 神戸]
-period: [1915, null]        # 活動期間・生没年・発生年など。不明・継続中は null
+period: [1915, null]        # 組織・人物は活動期間（人物の生没年は born / died）、事件は発生年、ソースは扱う時代の範囲。不明・継続中は null
 sources:                    # このページの記述を支える wiki/sources/ のページ
   - "[[警察白書 令和5年版]]"
 status: stub                # stub（骨組み）/ draft（記述あり・検証途上）/ stable（複数ソースで裏付け済み）
