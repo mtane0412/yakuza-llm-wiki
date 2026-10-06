@@ -10,5 +10,5 @@
 # 著作権上、公開リポジトリに含められない原本は raw/private/ に置く
 raw/private/
 
-# Claude Code のローカル作業領域（エージェントの worktree など）
-.claude/
+# Claude Code のエージェント用 worktree（.claude/ の共有設定は追跡できるよう、worktree のみ除外する）
+/.claude/worktrees/
