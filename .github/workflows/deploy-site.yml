@@ -4,6 +4,9 @@
 # - PoC 段階のため、手動実行（workflow_dispatch）のときだけ動かす。公開方針が固まったら push トリガーを追加する
 # - ビルドと検証は site/build.sh に任せる（noindex の robots メタタグ挿入と site/verify.mjs による検証を含む）
 # - 初回は リポジトリの Settings > Pages > Source を「GitHub Actions」にする必要がある
+# - 注意: Quartz v5.0.0 の explorer / graph / search プラグインは /static/contentIndex.json を絶対パスで取得するため、
+#   プロジェクトサイトのサブパス（/yakuza-llm-wiki/）で配信するとこの 3 機能が動かない。
+#   ドメイン直下で配信する（独自ドメイン、Cloudflare Pages など）か、別途対処が必要である
 name: Deploy wiki site to GitHub Pages
 
 on:

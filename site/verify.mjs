@@ -9,6 +9,9 @@
 //   4. 生ソース（raw/）・テンプレート（templates/）が公開されていないこと
 //   5. CLAUDE.md 2.4 の独自コールアウト（contradiction / disputed / bias / question）の CSS が含まれていること
 //   6. ページ内の内部リンクがすべて実在するページを指していること
+//   7. グラフビューのスクリプトが URL のパスを slug として使っていないこと
+//      （日本語のページ名がパーセントエンコードのまま索引と照合され、グラフが空になる不具合への応急処置を確認する。
+//        応急処置は site/build.sh の patch_graph_slug を参照）
 // - 1 件でも違反があれば違反内容を列挙して終了コード 1 で終了する
 
 import fs from "node:fs"
@@ -20,6 +23,8 @@ const publicDir = path.resolve(process.argv[2] ?? path.join(siteDir, ".quartz", 
 
 const ROBOTS_META = '<meta name="robots" content="noindex, nofollow">'
 const CUSTOM_CALLOUTS = ["contradiction", "disputed", "bias", "question"]
+// @quartz-community/utils の getFullSlugFromUrl() が minify された形（例: let u=window.location.pathname;return u.endsWith("/")…）
+const RAW_PATHNAME_SLUG = /let (\w+)=window\.location\.pathname;return \1\.endsWith\("\/"\)/
 
 /**
  * ディレクトリ配下のファイルを再帰的に列挙する。
@@ -103,6 +108,14 @@ function main() {
   }
   if (brokenLinks.length > 0) {
     errors.push(`内部リンク切れが ${brokenLinks.length} 件あります:\n    ${brokenLinks.slice(0, 20).join("\n    ")}`)
+  }
+
+  // 7. グラフビューの slug 取得
+  const unpatchedScripts = files
+    .filter((file) => file.endsWith(".js"))
+    .filter((file) => RAW_PATHNAME_SLUG.test(fs.readFileSync(path.join(publicDir, file), "utf8")))
+  if (unpatchedScripts.length > 0) {
+    errors.push(`URL のパスを slug として使うスクリプトが残っています（グラフビューが空になる）: ${unpatchedScripts.join(", ")}`)
   }
 
   if (errors.length > 0) {

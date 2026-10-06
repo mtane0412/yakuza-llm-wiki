@@ -45,6 +45,43 @@ if [ ! -d node_modules ]; then
 fi
 npx quartz plugin restore
 
+# 2.1 graph プラグインへの応急処置
+# graph プラグインは @quartz-community/utils の getFullSlugFromUrl() で現在ページの slug を得るが、
+# この関数は window.location.pathname をデコードせずに返す。そのため日本語のページ名がパーセントエンコードのまま
+# 索引（contentIndex.json）と照合され、グラフビューが空になる。またサブパス配信（GitHub Pages の /yakuza-llm-wiki/）では
+# パスの先頭にリポジトリ名が残り、同様に照合に失敗する。
+# Quartz 本体の getFullSlug() と同じく document.body.dataset.slug を返すように、ビルド済みの dist を書き換える。
+#
+# 注意: Quartz を更新して graph プラグインのコミットが変わったら、このスクリプトは停止する。
+# 上流で修正済みかを確認し、修正済みならこの応急処置を削除する。未修正なら置換が当たることを確かめてから
+# GRAPH_PLUGIN_COMMIT を更新する。
+GRAPH_PLUGIN_COMMIT="701bda442cf08f521e88ec326b12a7559320eef4"
+
+patch_graph_slug() {
+  local plugin_dir=".quartz/plugins/graph"
+  local locked_commit
+  locked_commit="$(node -p 'require("./quartz.lock.json").plugins.graph.commit')"
+  if [ "$locked_commit" != "$GRAPH_PLUGIN_COMMIT" ]; then
+    echo "graph プラグインのコミットが変わりました（想定: $GRAPH_PLUGIN_COMMIT、lockfile: $locked_commit）。" >&2
+    echo "site/build.sh の patch_graph_slug の説明に従って、応急処置の要否を確認してください。" >&2
+    exit 1
+  fi
+
+  local file
+  for file in "$plugin_dir/dist/index.js" "$plugin_dir/dist/components/index.js"; do
+    # plugin restore は既存のプラグインを再取得しないため、適用済みの場合は何もしない
+    if grep -q '(){return document.body.dataset.slug}' "$file"; then
+      continue
+    fi
+    perl -0pi -e 's/function (\w+)\(\)\{let (\w+)=window\.location\.pathname;return \2\.endsWith\("\/"\)&&\(\2=\2\.slice\(0,-1\)\),\2\.startsWith\("\/"\)&&\(\2=\2\.slice\(1\)\),\2\}/function $1(){return document.body.dataset.slug}/g' "$file"
+    if ! grep -q '(){return document.body.dataset.slug}' "$file"; then
+      echo "graph プラグインへの応急処置を適用できませんでした: $file" >&2
+      exit 1
+    fi
+  done
+}
+patch_graph_slug
+
 # 3. 設定・スタイル・コンテンツの配置
 cp "$SITE_DIR/quartz.config.yaml" quartz.config.yaml
 cp "$SITE_DIR/custom.scss" quartz/styles/custom.scss
