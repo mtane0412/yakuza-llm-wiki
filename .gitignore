@@ -12,3 +12,6 @@ raw/private/
 
 # Claude Code のエージェント用 worktree（.claude/ の共有設定は追跡できるよう、worktree のみ除外する）
 /.claude/worktrees/
+
+# 静的サイトのビルド用に取得する Quartz 本体と成果物
+/site/.quartz/
