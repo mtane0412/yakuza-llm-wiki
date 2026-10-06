@@ -56,6 +56,22 @@ function resolvesToExistingFile(fromFile, href) {
   return candidates.some((candidate) => fs.existsSync(path.join(publicDir, candidate)))
 }
 
+/**
+ * HTML から、internal クラスを持つ a 要素の href 属性値を列挙する。
+ * Quartz は既存のクラスに internal を追加するため、class と href の属性順に依存せずに読み取る。
+ * @param html 検査対象の HTML
+ * @returns 内部リンクの href 属性値の配列
+ */
+function internalLinkHrefs(html) {
+  const hrefs = []
+  for (const [tag] of html.matchAll(/<a\s[^>]*>/g)) {
+    const className = tag.match(/\sclass="([^"]*)"/)?.[1]
+    const href = tag.match(/\shref="([^"]*)"/)?.[1]
+    if (href !== undefined && className?.split(/\s+/).includes("internal")) hrefs.push(href)
+  }
+  return hrefs
+}
+
 function main() {
   if (!fs.existsSync(publicDir)) {
     console.error(`出力ディレクトリが存在しません: ${publicDir}`)
@@ -102,9 +118,9 @@ function main() {
   let checkedLinks = 0
   for (const file of htmlFiles) {
     const html = fs.readFileSync(path.join(publicDir, file), "utf8")
-    for (const match of html.matchAll(/<a href="([^"]*)" class="internal[^"]*"/g)) {
+    for (const href of internalLinkHrefs(html)) {
       checkedLinks++
-      if (!resolvesToExistingFile(file, match[1])) brokenLinks.push(`${file} → ${match[1]}`)
+      if (!resolvesToExistingFile(file, href)) brokenLinks.push(`${file} → ${href}`)
     }
   }
   if (brokenLinks.length > 0) {
