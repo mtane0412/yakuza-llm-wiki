@@ -7,6 +7,7 @@
 # - 公開するのは wiki/ のみで、raw/ と templates/ はコピーしない
 # - 検索エンジンに載せないため、出力したすべての HTML の <head> 直後に robots メタタグ（noindex, nofollow）を挿入し、
 #   Cloudflare Workers Static Assets 用の site/_headers（X-Robots-Tag）を成果物にコピーする
+# - graph プラグインの不具合 2 件（日本語ページ名でグラフが空になる・iPhone の Safari がメモリ不足で落ちる）に応急処置を当てる
 # - 最後に site/verify.mjs で成果物を検証し、違反があれば失敗する
 #
 # 使い方:
@@ -82,6 +83,24 @@ patch_graph_slug() {
   done
 }
 patch_graph_slug
+
+# 2.2 graph プラグインへの応急処置（iPhone の Safari のクラッシュ対策）
+# graph プラグインはノードのラベル（PIXI.Text）を画面の 4 倍の解像度（devicePixelRatio * 4）でテクスチャ化する。
+# devicePixelRatio が 3 の iPhone では 1 ラベルが 12 倍の解像度になり、ページ一覧へのリンクが多いトップページでは
+# テクスチャの合計が 1GB を超える。その結果 iPhone の Safari が「問題が繰り返し発生しました」としてページを再読み込みする。
+# ラベルの解像度を画面と同じ devicePixelRatio に下げる（テクスチャは 1/16 になる）。
+# 注意: patch_graph_slug と同じく、graph プラグインのコミットが変わったら上流での修正の有無を確認する。
+patch_graph_label_resolution() {
+  local file
+  for file in ".quartz/plugins/graph/dist/index.js" ".quartz/plugins/graph/dist/components/index.js"; do
+    perl -pi -e 's/resolution:window\.devicePixelRatio\*4\b/resolution:window.devicePixelRatio/g' "$file"
+    if grep -q 'resolution:window\.devicePixelRatio\*4' "$file"; then
+      echo "graph プラグインのラベル解像度を変更できませんでした: $file" >&2
+      exit 1
+    fi
+  done
+}
+patch_graph_label_resolution
 
 # 3. 設定・スタイル・コンテンツの配置
 cp "$SITE_DIR/quartz.config.yaml" quartz.config.yaml
