@@ -13,6 +13,9 @@
 //      （日本語のページ名がパーセントエンコードのまま索引と照合され、グラフが空になる不具合への応急処置を確認する。
 //        応急処置は site/build.sh の patch_graph_slug を参照）
 //   8. Cloudflare Workers Static Assets 用の _headers が、全パス（/*）に X-Robots-Tag: noindex, nofollow を付けること
+//   9. グラフビューのスクリプトがラベルを画面の 4 倍の解像度で描いていないこと
+//      （iPhone の Safari がテクスチャのメモリ不足でページを強制再読み込みする不具合への応急処置を確認する。
+//        応急処置は site/build.sh の patch_graph_label_resolution を参照）
 // - 1 件でも違反があれば違反内容を列挙して終了コード 1 で終了する
 
 import fs from "node:fs"
@@ -26,6 +29,8 @@ const ROBOTS_META = '<meta name="robots" content="noindex, nofollow">'
 const CUSTOM_CALLOUTS = ["contradiction", "disputed", "bias", "question"]
 // @quartz-community/utils の getFullSlugFromUrl() が minify された形（例: let u=window.location.pathname;return u.endsWith("/")…）
 const RAW_PATHNAME_SLUG = /let (\w+)=window\.location\.pathname;return \1\.endsWith\("\/"\)/
+// graph プラグインがラベル（PIXI.Text）に指定する解像度が minify された形
+const QUADRUPLE_LABEL_RESOLUTION = /resolution:window\.devicePixelRatio\*4\b/
 
 /**
  * ディレクトリ配下のファイルを再帰的に列挙する。
@@ -140,6 +145,16 @@ function main() {
   const headers = fs.existsSync(headersPath) ? fs.readFileSync(headersPath, "utf8") : ""
   if (!/^\/\*\n(?:[ \t]+.*\n)*?[ \t]+X-Robots-Tag: noindex, nofollow$/m.test(headers)) {
     errors.push("_headers に /* 向けの X-Robots-Tag: noindex, nofollow がありません")
+  }
+
+  // 9. グラフビューのラベルの解像度
+  const highResolutionLabelScripts = files
+    .filter((file) => file.endsWith(".js"))
+    .filter((file) => QUADRUPLE_LABEL_RESOLUTION.test(fs.readFileSync(path.join(publicDir, file), "utf8")))
+  if (highResolutionLabelScripts.length > 0) {
+    errors.push(
+      `グラフのラベルを画面の 4 倍の解像度で描くスクリプトが残っています（iPhone の Safari がメモリ不足で落ちる）: ${highResolutionLabelScripts.join(", ")}`,
+    )
   }
 
   if (errors.length > 0) {

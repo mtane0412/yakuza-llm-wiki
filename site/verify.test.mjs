@@ -49,3 +49,30 @@ test("internal クラスを持たない外部リンクは検査しない", () =>
   const stderr = runVerifyWithIndexHtml('<html><head></head><a href="https://example.com/missing" class="external">外部</a></html>')
   assert.doesNotMatch(stderr, /内部リンク切れ/)
 })
+
+/**
+ * 指定した内容の postscript.js を持つ一時的な出力ディレクトリを作り、verify.mjs を実行する。
+ * @param script postscript.js の内容
+ * @returns verify.mjs の標準エラー出力
+ */
+function runVerifyWithScript(script) {
+  const publicDir = fs.mkdtempSync(path.join(os.tmpdir(), "verify-test-"))
+  try {
+    fs.writeFileSync(path.join(publicDir, "index.html"), "<html><head></head></html>")
+    fs.writeFileSync(path.join(publicDir, "postscript.js"), script)
+    return spawnSync(process.execPath, [verifyScript, publicDir], { encoding: "utf8" }).stderr
+  } finally {
+    fs.rmSync(publicDir, { recursive: true, force: true })
+  }
+}
+
+test("グラフのラベルを画面の 4 倍の解像度で描くスクリプトを検出する", () => {
+  const stderr = runVerifyWithScript('new Text({text:"山口組",resolution:window.devicePixelRatio*4});')
+  assert.match(stderr, /グラフのラベルを画面の 4 倍の解像度で描くスクリプトが残っています/)
+  assert.match(stderr, /postscript\.js/)
+})
+
+test("グラフのラベルを画面と同じ解像度で描くスクリプトは問題として扱わない", () => {
+  const stderr = runVerifyWithScript('new Text({text:"山口組",resolution:window.devicePixelRatio});')
+  assert.doesNotMatch(stderr, /4 倍の解像度/)
+})
